@@ -7,7 +7,7 @@ from Bio import pairwise2
 from Bio.Align import substitution_matrices
 
 
-def main(input_target_species):
+def main(input_target_species, input_file_path):
     # 验证物种是否为指定列表中的一个
     valid_species = ['fly', 'frog', 'worm', 'mosquito', 'fish']
     verified_target_species = input_target_species.lower()
@@ -77,11 +77,11 @@ def main(input_target_species):
                                         'rat': rat_ortholog_pair_best_database_path}
 
     if mode == 'test':
-        file_path = 'test/data/examples.xlsx'
+        file_path = input_file_path
         output_path = f'test/{verified_target_species}_test_output_{start_time}.xlsx'
         err_output_path = f'test/{verified_target_species}_test_err_output_{start_time}.xlsx'
     else:
-        file_path = 'data/CST_Phosphorylation_site_dataset_selected_March2024.xlsx'
+        file_path = input_file_path
         output_path = f'data/{verified_target_species}_output_{start_time}.xlsx'
         err_output_path = f'data/{verified_target_species}_err_output_{start_time}.xlsx'
 
@@ -134,11 +134,6 @@ def process_data(df, output_path, err_output_path, logger, target_species,
             'fish': 7955,
             'mosquito': 7165,
         }
-        try:
-            input_specie_id = specie_id_mapping.get(input_species)
-        except AttributeError:
-            logger.log(f'Error: Unable to find specie id for {input_species}')
-            break
 
         # Regular expression to extract amino acid and position from site_info
         match = re.match(r"([A-Za-z]+)(\d+)-p", site_info)
@@ -195,7 +190,7 @@ def process_data(df, output_path, err_output_path, logger, target_species,
                     input_gene_name,
                     input_species,
                     cleaned_input_protein_slice,
-                    gene_information_database_path,
+                    gene_id_mapping_database_path,
                     protein_database_path)
 
                 if input_protein_sequence and gene_id:
@@ -269,7 +264,7 @@ def process_data(df, output_path, err_output_path, logger, target_species,
             logger.log(f'Trying to find gene id by gene name')
             mapped_input_gene_id_list_by_gene_name = find_gene_id_mapping_by_gene_name(
                 input_gene_name,
-                input_specie_id,
+                input_species,
                 gene_id_mapping_database_path)
             if mapped_input_gene_id_list_by_gene_name:
                 mapped_gene_id_counts = len(mapped_input_gene_id_list_by_gene_name)
@@ -572,6 +567,7 @@ def get_input_protein_sequence_by_refseq_id(refseq_id, cleaned_input_protein_sli
 
 def get_input_protein_sequence_by_gene_id(gene_name, input_species, cleaned_input_protein_slice,
                                           gene_id_mapping_database_path, protein_database_path):
+    print(input_species)
     gene_id_list = find_gene_id_mapping_by_gene_name(
         gene_name,
         input_species,
@@ -965,8 +961,9 @@ if __name__ == "__main__":
         print("Usage: python antibody_discovery.py [species](fly, frog, fish, mosquito, worm)")
         sys.exit(1)
     user_input_target_species = sys.argv[1]
+    user_input_file_path = sys.argv[2] if len(sys.argv) > 2 else 'data/CST_Phosphorylation_site_dataset_selected_March2024.xlsx'
     try:
-        main(user_input_target_species)
+        main(user_input_target_species, user_input_file_path)
     except ValueError as e:
         print(e)
         sys.exit(1)
